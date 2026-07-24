@@ -69,6 +69,7 @@
     Promise.all([window.PQStore.load(), window.PQStore.loadAssets()]).then(function (results) {
       state = { content: results[0], assets: results[1] };
       renderTab();
+      updateCopyBtn();
     }).catch(function (e) {
       console.error(e);
       mainEl.innerHTML = '<p style="padding:24px 4px;color:#B23A2E;">No se pudo cargar el contenido. Revisa la consola.</p>';
@@ -80,6 +81,7 @@
       activeTab = btn.dataset.tab;
       document.querySelectorAll('.admin-tab').forEach(function (b) { b.classList.toggle('active', b === btn); });
       renderTab();
+      updateCopyBtn();
     });
   });
 
@@ -89,6 +91,30 @@
     if (activeTab === 'images') renderImagesTab();
     else renderLocaleTab(activeTab);
   }
+
+  // ---------- Copy ES <-> EN ----------
+  var LOCALE_NAMES = { es: 'Español', en: 'English' };
+  var copyBtn = document.getElementById('admin-copy-locale');
+
+  function updateCopyBtn() {
+    if (activeTab === 'images') {
+      copyBtn.style.display = 'none';
+      return;
+    }
+    copyBtn.style.display = '';
+    var target = activeTab === 'es' ? 'en' : 'es';
+    copyBtn.textContent = 'Copiar a ' + LOCALE_NAMES[target];
+  }
+
+  copyBtn.addEventListener('click', function () {
+    if (activeTab === 'images') return;
+    var source = activeTab;
+    var target = source === 'es' ? 'en' : 'es';
+    if (!confirm('¿Copiar todo el contenido de ' + LOCALE_NAMES[source] + ' a ' + LOCALE_NAMES[target] + '? Se reemplaza todo lo que hay ahora en ' + LOCALE_NAMES[target] + ' (precios, fechas, textos). No se publica hasta que le des "Guardar cambios".')) return;
+    state.content[target] = window.PQStore.clone(state.content[source]);
+    markDirty();
+    toast('Copiado de ' + LOCALE_NAMES[source] + ' a ' + LOCALE_NAMES[target] + '. Revisa los textos que necesiten traducirse y luego guarda.');
+  });
 
   // ---------- DOM helpers ----------
   function el(tag, cls, text) {
