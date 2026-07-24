@@ -4,12 +4,12 @@
    firestore.rules / storage.rules in this repo). */
 (function () {
   var firebaseConfig = {
-    apiKey: "TODO_API_KEY",
-    authDomain: "TODO_PROJECT_ID.firebaseapp.com",
-    projectId: "TODO_PROJECT_ID",
-    storageBucket: "TODO_PROJECT_ID.firebasestorage.app",
-    messagingSenderId: "TODO_SENDER_ID",
-    appId: "TODO_APP_ID"
+    apiKey: "AIzaSyD83bXeSnJvmx2o6krI0rtMaehmttYbSfg",
+    authDomain: "cotizacion-perla.firebaseapp.com",
+    projectId: "cotizacion-perla",
+    storageBucket: "cotizacion-perla.firebasestorage.app",
+    messagingSenderId: "292765585191",
+    appId: "1:292765585191:web:02d301bdb9c658c0622302"
   };
   firebase.initializeApp(firebaseConfig);
   window.PQ_ADMIN_EMAIL = 'ceda007@gmail.com';
