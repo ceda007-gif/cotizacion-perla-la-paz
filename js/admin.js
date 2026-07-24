@@ -439,18 +439,10 @@
     var c = state.content[locale];
 
     var s2 = section('Tarjeta de datos del grupo');
-    inputRow(s2, 'Etiqueta contacto', c.meta.contactLabel, function (v) { c.meta.contactLabel = v; });
     inputRow(s2, 'Contacto', c.meta.contact, function (v) { c.meta.contact = v; });
-    inputRow(s2, 'Etiqueta empresa/grupo', c.meta.companyLabel, function (v) { c.meta.companyLabel = v; });
     inputRow(s2, 'Empresa / Grupo', c.meta.company, function (v) { c.meta.company = v; });
-    inputRow(s2, 'Etiqueta fechas', c.meta.datesLabel, function (v) { c.meta.datesLabel = v; });
     inputRow(s2, 'Fechas del grupo', c.meta.dates, function (v) { c.meta.dates = v; });
-    inputRow(s2, 'Etiqueta fecha', c.meta.dateLabel, function (v) { c.meta.dateLabel = v; });
     inputRow(s2, 'Fecha', c.meta.date, function (v) { c.meta.date = v; });
-
-    var s3 = section('Introducción');
-    inputRow(s3, 'Párrafo de bienvenida', c.intro, function (v) { c.intro = v; }, { textarea: true, rows: 5 });
-    inputRow(s3, 'Texto "toca para ver detalle"', c.tapHint, function (v) { c.tapHint = v; });
 
     var s4 = section('Tarifas y Condiciones', { enabled: { value: c.rates.enabled, onChange: function (v) { c.rates.enabled = v; } } });
     inputRow(s4, 'Título de la sección', c.rates.title, function (v) { c.rates.title = v; });
@@ -519,15 +511,6 @@
     var hint7 = el('p', null, 'Las fotos (patio, lobby, alberca, tours) se editan en la pestaña "Imágenes".');
     hint7.style.cssText = 'font-size:12px;color:#8C7C68;margin-top:-6px;';
     s7.appendChild(hint7);
-
-    var s8 = section('Espacios para Eventos', { enabled: { value: c.venues.enabled, onChange: function (v) { c.venues.enabled = v; } } });
-    inputRow(s8, 'Título de la sección', c.venues.title, function (v) { c.venues.title = v; });
-    inputRow(s8, 'Párrafo introductorio', c.venues.intro, function (v) { c.venues.intro = v; }, { textarea: true, rows: 3 });
-    s8.appendChild(el('label', null, 'Salones / espacios'));
-    editableTable(s8, c.venues.list, [
-      { key: 'name', label: 'Nombre' },
-      { key: 'size', label: 'Tamaño' }
-    ], function () { return { name: '', size: '' }; });
 
     var s9 = section('Políticas del Hotel', { enabled: { value: c.policies.enabled, onChange: function (v) { c.policies.enabled = v; } } });
     inputRow(s9, 'Título de la sección', c.policies.title, function (v) { c.policies.title = v; });
@@ -603,13 +586,24 @@
     return JSON.stringify(obj).replace(/</g, '\\u003c');
   }
 
-  function buildStandaloneHTML(content, assets) {
+  /** mode: 'both' | 'es' | 'en' — which language(s) to bake into the export. */
+  function buildStandaloneHTML(content, assets, mode) {
+    mode = mode || 'both';
     var absAssets = {};
     Object.keys(assets).forEach(function (k) { absAssets[k] = toAbsolute(assets[k]); });
 
+    var exportContent = mode === 'both' ? content : (mode === 'en' ? { en: content.en } : { es: content.es });
+    var initialLocale = mode === 'en' ? 'en' : 'es';
+    var showToggle = mode === 'both';
+    var titleSuffix = mode === 'both' ? '' : (mode === 'en' ? ' (EN)' : ' (ES)');
+
+    var toggleHtml = showToggle
+      ? '<div class="pq-locale-toggle">\n  <button type="button" class="pq-locale-btn" data-locale="es">ES</button>\n  <button type="button" class="pq-locale-btn" data-locale="en">EN</button>\n</div>\n'
+      : '';
+
     var bootstrap = [
       '(function(){',
-      '  var state = { locale: "es", open: new Set(), content: window.__PQ_CONTENT__, assets: window.__PQ_ASSETS__ };',
+      '  var state = { locale: "' + initialLocale + '", open: new Set(), content: window.__PQ_CONTENT__, assets: window.__PQ_ASSETS__ };',
       '  var root = document.getElementById("pq-root");',
       '  function render(){',
       '    var c = state.content[state.locale];',
@@ -631,21 +625,18 @@
     ].join('\n');
 
     return '<!DOCTYPE html>\n' +
-      '<html lang="es">\n<head>\n<meta charset="utf-8">\n' +
+      '<html lang="' + initialLocale + '">\n<head>\n<meta charset="utf-8">\n' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
-      '<title>Hotel Perla La Paz &middot; Propuesta de Grupo</title>\n' +
+      '<title>Hotel Perla La Paz &middot; Propuesta de Grupo' + titleSuffix + '</title>\n' +
       '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
       '<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">\n' +
       '<link rel="stylesheet" href="' + SITE_BASE + 'css/styles.css">\n' +
       '</head>\n<body>\n' +
-      '<div class="pq-locale-toggle">\n' +
-      '  <button type="button" class="pq-locale-btn" data-locale="es">ES</button>\n' +
-      '  <button type="button" class="pq-locale-btn" data-locale="en">EN</button>\n' +
-      '</div>\n' +
+      toggleHtml +
       '<div id="pq-root"></div>\n' +
       '<script src="' + SITE_BASE + 'js/render.js"><' + '/script>\n' +
       '<script>\n' +
-      'window.__PQ_CONTENT__ = ' + safeJSON(content) + ';\n' +
+      'window.__PQ_CONTENT__ = ' + safeJSON(exportContent) + ';\n' +
       'window.__PQ_ASSETS__ = ' + safeJSON(absAssets) + ';\n' +
       bootstrap + '\n' +
       '<' + '/script>\n' +
@@ -654,12 +645,14 @@
 
   document.getElementById('admin-download').addEventListener('click', function () {
     try {
-      var html = buildStandaloneHTML(state.content, state.assets);
+      var mode = document.getElementById('admin-download-mode').value;
+      var html = buildStandaloneHTML(state.content, state.assets, mode);
       var blob = new Blob([html], { type: 'text/html' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
-      a.download = 'cotizacion-perla-' + Date.now() + '.html';
+      var suffix = mode === 'both' ? '' : ('-' + mode);
+      a.download = 'cotizacion-perla' + suffix + '-' + Date.now() + '.html';
       document.body.appendChild(a);
       a.click();
       a.remove();

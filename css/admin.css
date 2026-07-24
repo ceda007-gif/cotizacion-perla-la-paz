@@ -21,6 +21,7 @@
 .admin-btn.secondary{background:transparent;border:1px solid #6b6055;color:#EFE7DB;}
 .admin-btn.secondary:hover{background:#3a332c;}
 .admin-btn.danger{background:transparent;border:1px solid #B23A2E;color:#F1B3AC;}
+.admin-select-inline{padding:8px 10px;font-size:13px;border-radius:3px;border:1px solid #6b6055;background:#2B2622;color:#EFE7DB;font-family:inherit;cursor:pointer;}
 .admin-dirty{font-size:12px;color:#EAC79A;}
 
 .admin-main{max-width:840px;margin:0 auto;padding:28px 20px 100px;}
