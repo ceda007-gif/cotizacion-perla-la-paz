@@ -124,25 +124,49 @@
     return e;
   }
 
-  function section(title) {
+  /**
+   * Collapsible section, matching the public site's accordion look.
+   * opts: { startOpen, enabled: {value, onChange} }
+   * Returns the body container — append fields into it as before.
+   */
+  function section(title, opts) {
+    opts = opts || {};
     var s = el('section', 'admin-section');
-    s.appendChild(el('h2', null, title));
-    mainEl.appendChild(s);
-    return s;
-  }
+    var header = el('div', 'admin-section-header');
 
-  function checkboxRow(container, label, checked, onChange) {
-    var wrap = el('div', 'admin-field admin-checkbox-field');
-    var lab = document.createElement('label');
-    var input = document.createElement('input');
-    input.type = 'checkbox';
-    input.checked = checked !== false;
-    input.addEventListener('change', function () { onChange(input.checked); markDirty(); });
-    lab.appendChild(input);
-    lab.appendChild(document.createTextNode(' ' + label));
-    wrap.appendChild(lab);
-    container.appendChild(wrap);
-    return wrap;
+    if (opts.enabled) {
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'admin-section-visible-toggle';
+      cb.title = 'Mostrar esta sección en el sitio';
+      cb.checked = opts.enabled.value !== false;
+      cb.addEventListener('click', function (e) { e.stopPropagation(); });
+      cb.addEventListener('change', function () { opts.enabled.onChange(cb.checked); markDirty(); });
+      header.appendChild(cb);
+    }
+
+    var titleEl = el('span', 'admin-section-title', title);
+    header.appendChild(titleEl);
+    var icon = el('span', 'admin-section-icon', '+');
+    header.appendChild(icon);
+    s.appendChild(header);
+
+    var body = el('div', 'admin-section-body');
+    s.appendChild(body);
+
+    var open = !!opts.startOpen;
+    function sync() {
+      body.style.display = open ? '' : 'none';
+      icon.classList.toggle('open', open);
+    }
+    sync();
+    header.addEventListener('click', function () {
+      open = !open;
+      sync();
+    });
+
+    mainEl.appendChild(s);
+    return body;
   }
 
   function inputRow(container, label, value, onChange, opts) {
@@ -362,7 +386,7 @@
   }
 
   function renderImagesTab() {
-    var s = section('Imágenes del sitio');
+    var s = section('Imágenes del sitio', { startOpen: true });
     var hint = el('p', null, 'Las fotos se suben a Firebase Storage. El cambio queda listo aquí, pero solo se publica cuando le des "Guardar cambios".');
     hint.style.cssText = 'font-size:12px;color:#8C7C68;margin-top:-8px;margin-bottom:16px;';
     s.appendChild(hint);
@@ -414,10 +438,6 @@
   function renderLocaleTab(locale) {
     var c = state.content[locale];
 
-    var s1 = section('Portada');
-    inputRow(s1, 'Frase pequeña (eyebrow)', c.hero.eyebrow, function (v) { c.hero.eyebrow = v; });
-    inputRow(s1, 'Título principal', c.hero.headline, function (v) { c.hero.headline = v; });
-
     var s2 = section('Tarjeta de datos del grupo');
     inputRow(s2, 'Etiqueta contacto', c.meta.contactLabel, function (v) { c.meta.contactLabel = v; });
     inputRow(s2, 'Contacto', c.meta.contact, function (v) { c.meta.contact = v; });
@@ -432,8 +452,7 @@
     inputRow(s3, 'Párrafo de bienvenida', c.intro, function (v) { c.intro = v; }, { textarea: true, rows: 5 });
     inputRow(s3, 'Texto "toca para ver detalle"', c.tapHint, function (v) { c.tapHint = v; });
 
-    var s4 = section('Tarifas y Condiciones');
-    checkboxRow(s4, 'Mostrar esta sección en el sitio', c.rates.enabled, function (v) { c.rates.enabled = v; });
+    var s4 = section('Tarifas y Condiciones', { enabled: { value: c.rates.enabled, onChange: function (v) { c.rates.enabled = v; } } });
     inputRow(s4, 'Título de la sección', c.rates.title, function (v) { c.rates.title = v; });
     inputRow(s4, 'Check-in', c.rates.checkIn, function (v) { c.rates.checkIn = v; });
     inputRow(s4, 'Check-out', c.rates.checkOut, function (v) { c.rates.checkOut = v; });
@@ -454,8 +473,7 @@
     inputRow(s4, 'Etiqueta de concesiones', c.rates.concessionsLabel, function (v) { c.rates.concessionsLabel = v; });
     linesRow(s4, 'Concesiones para el grupo', c.rates.concessions, function (v) { c.rates.concessions = v; });
 
-    var s5 = section('Agenda Estimada');
-    checkboxRow(s5, 'Mostrar esta sección en el sitio', c.agenda.enabled, function (v) { c.agenda.enabled = v; });
+    var s5 = section('Agenda Estimada', { enabled: { value: c.agenda.enabled, onChange: function (v) { c.agenda.enabled = v; } } });
     inputRow(s5, 'Título de la sección', c.agenda.title, function (v) { c.agenda.title = v; });
     inputRow(s5, 'Párrafo introductorio', c.agenda.intro, function (v) { c.agenda.intro = v; }, { textarea: true, rows: 3 });
     s5.appendChild(el('label', null, 'Partidas de la agenda'));
@@ -473,8 +491,7 @@
     inputRow(s5, 'Monto total agenda', c.agenda.totalAmount, function (v) { c.agenda.totalAmount = v; });
     inputRow(s5, 'Moneda', c.agenda.totalCurrency, function (v) { c.agenda.totalCurrency = v; });
 
-    var s6 = section('Habitaciones');
-    checkboxRow(s6, 'Mostrar esta sección en el sitio', c.rooms.enabled, function (v) { c.rooms.enabled = v; });
+    var s6 = section('Habitaciones', { enabled: { value: c.rooms.enabled, onChange: function (v) { c.rooms.enabled = v; } } });
     inputRow(s6, 'Título de la sección', c.rooms.title, function (v) { c.rooms.title = v; });
     inputRow(s6, 'Párrafo introductorio', c.rooms.intro, function (v) { c.rooms.intro = v; }, { textarea: true, rows: 3 });
     s6.appendChild(el('label', null, 'Tipos de habitación'));
@@ -488,8 +505,7 @@
     inputRow(s6, 'Etiqueta de amenidades', c.rooms.amenitiesLabel, function (v) { c.rooms.amenitiesLabel = v; });
     linesRow(s6, 'En todas las habitaciones', c.rooms.amenities, function (v) { c.rooms.amenities = v; });
 
-    var s7 = section('Amenidades y Experiencias');
-    checkboxRow(s7, 'Mostrar esta sección en el sitio', c.amenities.enabled, function (v) { c.amenities.enabled = v; });
+    var s7 = section('Amenidades y Experiencias', { enabled: { value: c.amenities.enabled, onChange: function (v) { c.amenities.enabled = v; } } });
     inputRow(s7, 'Título de la sección', c.amenities.title, function (v) { c.amenities.title = v; });
     inputRow(s7, 'Etiqueta amenidades del hotel', c.amenities.hotelAmenitiesLabel, function (v) { c.amenities.hotelAmenitiesLabel = v; });
     linesRow(s7, 'Amenidades del hotel', c.amenities.hotelAmenities, function (v) { c.amenities.hotelAmenities = v; });
@@ -504,8 +520,7 @@
     hint7.style.cssText = 'font-size:12px;color:#8C7C68;margin-top:-6px;';
     s7.appendChild(hint7);
 
-    var s8 = section('Espacios para Eventos');
-    checkboxRow(s8, 'Mostrar esta sección en el sitio', c.venues.enabled, function (v) { c.venues.enabled = v; });
+    var s8 = section('Espacios para Eventos', { enabled: { value: c.venues.enabled, onChange: function (v) { c.venues.enabled = v; } } });
     inputRow(s8, 'Título de la sección', c.venues.title, function (v) { c.venues.title = v; });
     inputRow(s8, 'Párrafo introductorio', c.venues.intro, function (v) { c.venues.intro = v; }, { textarea: true, rows: 3 });
     s8.appendChild(el('label', null, 'Salones / espacios'));
@@ -514,8 +529,7 @@
       { key: 'size', label: 'Tamaño' }
     ], function () { return { name: '', size: '' }; });
 
-    var s9 = section('Políticas del Hotel');
-    checkboxRow(s9, 'Mostrar esta sección en el sitio', c.policies.enabled, function (v) { c.policies.enabled = v; });
+    var s9 = section('Políticas del Hotel', { enabled: { value: c.policies.enabled, onChange: function (v) { c.policies.enabled = v; } } });
     inputRow(s9, 'Título de la sección', c.policies.title, function (v) { c.policies.title = v; });
     s9.appendChild(el('label', null, 'Datos rápidos (check-in, check-out, etc.)'));
     editableTable(s9, c.policies.quickFacts, [
@@ -528,8 +542,7 @@
       { key: 'text', label: 'Texto', type: 'textarea' }
     ], function () { return { title: '', text: '' }; });
 
-    var s10 = section('Contacto');
-    checkboxRow(s10, 'Mostrar esta sección en el sitio', c.contact.enabled, function (v) { c.contact.enabled = v; });
+    var s10 = section('Contacto', { enabled: { value: c.contact.enabled, onChange: function (v) { c.contact.enabled = v; } } });
     inputRow(s10, 'Título de la sección', c.contact.title, function (v) { c.contact.title = v; });
     inputRow(s10, 'Nombre del hotel', c.contact.hotelName, function (v) { c.contact.hotelName = v; });
     inputRow(s10, 'Dirección línea 1', c.contact.addressLine1, function (v) { c.contact.addressLine1 = v; });
