@@ -663,4 +663,52 @@
       toast('No se pudo generar el HTML: ' + err.message, true);
     }
   });
+
+  // ---------- PDF (browser print, all sections expanded) ----------
+  function buildPrintableHTML(content, assets, locale) {
+    var c = content[locale];
+    var absAssets = {};
+    Object.keys(assets).forEach(function (k) { absAssets[k] = toAbsolute(assets[k]); });
+    var allOpen = new Set(['rates', 'agenda', 'rooms', 'amenities', 'venues', 'policies', 'contact']);
+    var bodyHtml = window.PQRender.renderQuotePage(c, absAssets, allOpen);
+
+    return '<!DOCTYPE html>\n' +
+      '<html lang="' + locale + '">\n<head>\n<meta charset="utf-8">\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+      '<title>Hotel Perla La Paz &middot; Propuesta de Grupo (' + (locale === 'en' ? 'EN' : 'ES') + ')</title>\n' +
+      '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
+      '<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">\n' +
+      '<link rel="stylesheet" href="' + SITE_BASE + 'css/styles.css">\n' +
+      '<style>\n' +
+      '  .pq-tap-hint{display:none;}\n' +
+      '  .pq-section-icon{display:none;}\n' +
+      '  .pq-section-btn{cursor:default;}\n' +
+      '  .pq-locale-toggle,.pq-admin-link{display:none;}\n' +
+      '  @media print{ .pq-section{break-inside:avoid;} body{-webkit-print-color-adjust:exact;print-color-adjust:exact;} }\n' +
+      '</style>\n' +
+      '</head>\n<body>\n<div id="pq-root">' + bodyHtml + '</div>\n</body>\n</html>\n';
+  }
+
+  function downloadPDF(locale) {
+    try {
+      var html = buildPrintableHTML(state.content, state.assets, locale);
+      var win = window.open('', '_blank');
+      if (!win) {
+        toast('Tu navegador bloqueó la ventana — permite pop-ups para este sitio e inténtalo de nuevo.', true);
+        return;
+      }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.addEventListener('load', function () {
+        setTimeout(function () { win.print(); }, 350);
+      });
+    } catch (err) {
+      console.error(err);
+      toast('No se pudo generar el PDF: ' + err.message, true);
+    }
+  }
+
+  document.getElementById('admin-pdf-es').addEventListener('click', function () { downloadPDF('es'); });
+  document.getElementById('admin-pdf-en').addEventListener('click', function () { downloadPDF('en'); });
 })();
