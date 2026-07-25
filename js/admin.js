@@ -428,11 +428,110 @@
       row.appendChild(meta);
       s.appendChild(row);
     });
+
+    // ---- Additional images (not tied to a fixed slot) ----
+    if (!state.assets.customImages) state.assets.customImages = [];
+    var customWrap = el('div', null);
+    customWrap.style.cssText = 'margin-top:24px;padding-top:20px;border-top:1px solid #ECDFCF;';
+    var customTitle = el('h3', null, 'Imágenes adicionales');
+    customTitle.style.cssText = "font-family:'Cormorant',serif;font-size:18px;color:#B0703F;font-weight:500;margin:0 0 6px;";
+    customWrap.appendChild(customTitle);
+    var customHint = el('p', null, 'Súbelas aquí con el nombre que quieras y luego elígelas como foto al agregar un tipo de habitación nuevo.');
+    customHint.style.cssText = 'font-size:12px;color:#8C7C68;margin:0 0 14px;';
+    customWrap.appendChild(customHint);
+
+    function renderCustomList() {
+      var existingList = customWrap.querySelector('.admin-custom-image-list');
+      if (existingList) existingList.remove();
+      var list = el('div', 'admin-custom-image-list');
+      state.assets.customImages.forEach(function (entry) {
+        var row = el('div', 'admin-image-field');
+        var img = document.createElement('img');
+        if (state.assets[entry.id]) {
+          img.src = state.assets[entry.id];
+        } else {
+          img.classList.add('admin-image-empty');
+        }
+        row.appendChild(img);
+        var meta = el('div', 'meta');
+        var labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.value = entry.label || '';
+        labelInput.placeholder = 'Nombre de esta foto';
+        labelInput.style.cssText = 'font-size:13px;font-weight:600;margin-bottom:6px;padding:5px 7px;border:1px solid #E7DCCB;border-radius:3px;width:100%;box-sizing:border-box;';
+        labelInput.addEventListener('input', function () { entry.label = labelInput.value; markDirty(); });
+        meta.appendChild(labelInput);
+
+        var fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        var status = el('span', null, '');
+        status.style.cssText = 'font-size:12px;color:#8C7C68;margin-left:8px;';
+        fileInput.addEventListener('change', function () {
+          var file = fileInput.files[0];
+          if (!file) return;
+          fileInput.disabled = true;
+          status.textContent = 'Subiendo…';
+          uploadImage(entry.id, file, function (err, url) {
+            fileInput.disabled = false;
+            fileInput.value = '';
+            if (err) {
+              console.error(err);
+              status.textContent = '';
+              toast('No se pudo subir la imagen: ' + err.message, true);
+              return;
+            }
+            state.assets[entry.id] = url;
+            img.src = url;
+            img.classList.remove('admin-image-empty');
+            status.textContent = '';
+            markDirty();
+            toast('Imagen subida. No olvides "Guardar cambios" para publicarla.');
+          });
+        });
+        meta.appendChild(fileInput);
+        meta.appendChild(status);
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'btn-small btn-danger';
+        delBtn.textContent = 'Eliminar';
+        delBtn.style.cssText = 'display:block;margin-top:8px;';
+        delBtn.addEventListener('click', function () {
+          var idx = state.assets.customImages.indexOf(entry);
+          if (idx !== -1) state.assets.customImages.splice(idx, 1);
+          delete state.assets[entry.id];
+          markDirty();
+          renderCustomList();
+        });
+        meta.appendChild(delBtn);
+
+        row.appendChild(meta);
+        list.appendChild(row);
+      });
+      customWrap.insertBefore(list, addCustomBtn);
+    }
+
+    var addCustomBtn = el('button', 'btn-small btn-add', '+ Agregar imagen');
+    addCustomBtn.type = 'button';
+    addCustomBtn.addEventListener('click', function () {
+      state.assets.customImages.push({ id: 'custom-' + Date.now(), label: '' });
+      markDirty();
+      renderCustomList();
+    });
+    customWrap.appendChild(addCustomBtn);
+    renderCustomList();
+
+    s.appendChild(customWrap);
   }
 
   // ---------- Locale tab ----------
   function assetOptions() {
-    return Object.keys(ASSET_LABELS).map(function (k) { return { value: k, label: ASSET_LABELS[k] }; });
+    var fixed = Object.keys(ASSET_LABELS).map(function (k) { return { value: k, label: ASSET_LABELS[k] }; });
+    var custom = (state.assets.customImages || []).map(function (c) {
+      return { value: c.id, label: c.label ? c.label : 'Imagen adicional sin nombre' };
+    });
+    return fixed.concat(custom);
   }
 
   function renderLocaleTab(locale) {

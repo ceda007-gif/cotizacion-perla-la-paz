@@ -63,6 +63,7 @@
 
 .admin-image-field{display:flex;gap:16px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
 .admin-image-field img{width:120px;height:80px;object-fit:cover;border:1px solid #E7DCCB;border-radius:3px;background:#f2ece2;}
+.admin-image-field img.admin-image-empty{border-style:dashed;}
 .admin-image-field .meta{flex:1;min-width:180px;}
 .admin-image-field .meta div.name{font-size:13px;font-weight:600;margin-bottom:6px;}
 
